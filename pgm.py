@@ -47,10 +47,35 @@ from typing import Optional
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 import json
+import re
+import ssl
 
 BASE_URL = "https://hdmzp.github.io/hdhs/homeshopping"
 REQUEST_TIMEOUT = 15
 USER_AGENT = "Mozilla/5.0 (compatible; CelebPGMMonitor/1.0)"
+
+# 회사/기관 네트워크의 보안 프로그램(HTTPS 검사 프록시)이 인증서를 가로채면서
+# "CERTIFICATE_VERIFY_FAILED / Missing Authority Key Identifier" 오류가 나는 경우가 있다.
+# 그런 경우를 자동 감지하면 이 플래그를 켜고, 이후 요청부터는 인증서 검증을 건너뛴다.
+# (내려받는 데이터는 로그인/개인정보 없는 완전 공개 JSON이라 검증을 건너뛰어도 안전하다.)
+INSECURE_SSL = False
+
+
+def _is_cert_error(err: BaseException) -> bool:
+    reason = getattr(err, "reason", None)
+    if isinstance(reason, ssl.SSLCertVerificationError):
+        return True
+    text = str(err)
+    return "CERTIFICATE_VERIFY_FAILED" in text or "certificate verify failed" in text
+
+
+def _ssl_context() -> Optional[ssl.SSLContext]:
+    if not INSECURE_SSL:
+        return None  # 기본(검증 O) 컨텍스트 사용
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return ctx
 
 WEEKDAY_LABEL = ["월", "화", "수", "목", "금", "토", "일"]
 
@@ -83,27 +108,110 @@ APPLIANCE_KEYWORDS = [
     "다리미", "고데기", "면도기", "이발기", "칫솔살균기", "구강세정기", "워시콤보",
 ]
 
+# --- 상품명 간소화 규칙 (긴 홍보 문구를 줄여서 "브랜드 + 핵심품목" 형태로 보여주기 위함) ---
+# 한국어 상품명은 보통 [브랜드/수식어 ... 핵심품목명]처럼 핵심 단어가 "맨 뒤"에 온다.
+# (예: "엑스쿠첸 통5중 저압 냄비" -> 핵심은 맨 뒤 "냄비") 그래서 길이를 줄일 때도
+# 앞이 아니라 뒤쪽(핵심 단어가 있는 쪽)을 최대한 살리는 방향으로 자른다.
+_BRACKET_RE = re.compile(r"\[[^\]]*\]")          # [최초공개], [국민영양프로젝트] 등
+_PAREN_RE = re.compile(r"\([^)]*\)")             # (더블), (24팬) 등
+_QTY_UNIT_RE = re.compile(
+    r"\d+(?:\.\d+)?\s*"
+    r"(?:g|kg|mg|mcg|ml|mL|l|L|cm|mm|매|개월분|개월|개입|개|박스|봉|팩|세트|병|정|캡슐"
+    r"|포|주분|주|년|일|회|장|롤|호|종|겹|중|팬|웍|커버|kcal|IU|EA|ea)\b",
+    re.IGNORECASE,
+)
+_TRAILING_NUM_RE = re.compile(r"[\d.\-*]+$")     # 맨 끝에 홀로 남은 숫자/기호 (예: "로얄젤리 5")
+_TRAILING_CAPS_RE = re.compile(r"(?:\s+[A-Za-z]{2,}(?=\s|$))+$")  # 끝의 영문 모델명 (예: "ECM ACTIVE")
+_TRAILING_VERSION_RE = re.compile(r"(?:\s+\d+(?:\.\d+)+)+$")      # 끝의 버전 숫자 (예: "2.0")
+_FILLER_WORDS = [
+    "단독", "단품", "특가", "특별가", "한정물량", "최초공개", "신상", "리뉴얼", "기획",
+    "구성", "패키지", "사은품", "증정", "무료배송", "방송단독", "방송에서만", "미리주문",
+    "본품", "정품", "공식", "공식수입원", "백화점동일", "국민영양프로젝트", "역대급",
+    "단한번", "올해단한번", "특집구성", "단독구성", "추가구성", "전고객", "특별구성",
+    "세트", "대용량", "만능", "PICK", "NEW", "MAX", "PRO", "VIP", "미리주문10%",
+]
+
+DEFAULT_NAME_MAX_LEN = 16
+
+
+def _keep_tail(s: str, max_len: int) -> str:
+    """길이가 넘치면 '앞쪽 단어'부터 지워서 뒤쪽(핵심 단어)을 최대한 보존한다."""
+    if len(s) <= max_len:
+        return s
+    words = s.split(" ")
+    while len(words) > 1 and len(" ".join(words)) > max_len:
+        words.pop(0)
+    result = " ".join(words).strip()
+    if len(result) > max_len:
+        # 단어 하나가 이미 max_len보다 길면, 그 단어의 뒷부분(핵심에 더 가까운 쪽)을 보존
+        result = "…" + result[-(max_len - 1):]
+    return result
+
+
+def simplify_name(name: str, max_len: int = DEFAULT_NAME_MAX_LEN) -> str:
+    """'[국민영양프로젝트] 여에스더 포스파티딜세린 5개월분+비타민D+쇼핑백' 같은 상품명을
+    '여에스더 포스파티딜세린' 처럼 핵심 품목명 위주로 줄인다. 완벽한 요약은 아니고
+    규칙 기반 축약이라, 상품에 따라 다소 어색할 수 있다."""
+    s = name
+    s = _BRACKET_RE.sub(" ", s)
+    s = _PAREN_RE.sub(" ", s)
+    s = s.split("+", 1)[0]  # '+추가구성' 이후는 잘라냄
+    s = _QTY_UNIT_RE.sub(" ", s)
+    for w in _FILLER_WORDS:
+        s = s.replace(w, " ")
+    s = re.sub(r"\s+", " ", s).strip(" -_/·!,")
+    # 끝에 남은 영문 모델명/버전 숫자를 번갈아 제거 (예: "마스크팩 2.0 ECM ACTIVE" -> "마스크팩")
+    for _ in range(3):
+        before = s
+        s = _TRAILING_CAPS_RE.sub("", s).strip()
+        s = _TRAILING_VERSION_RE.sub("", s).strip()
+        if s == before:
+            break
+    s = _TRAILING_NUM_RE.sub("", s).strip()
+    if not s:
+        s = name.strip()
+    return _keep_tail(s, max_len)
+
 
 def http_get_json(url: str) -> Optional[dict]:
     """공개 JSON을 가져온다. 존재하지 않으면(404 등) None을 반환한다."""
+    global INSECURE_SSL
     req = Request(url, headers={"User-Agent": USER_AGENT})
-    for attempt in range(3):
+    tries_left = 3
+    while tries_left > 0:
         try:
-            with urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+            with urlopen(req, timeout=REQUEST_TIMEOUT, context=_ssl_context()) as resp:
                 raw = resp.read().decode("utf-8")
                 return json.loads(raw)
         except HTTPError as e:
             if e.code == 404:
                 return None
-            if attempt == 2:
+            tries_left -= 1
+            if tries_left <= 0:
                 print(f"[경고] {url} 요청 실패 (HTTP {e.code})", file=sys.stderr)
                 return None
             time.sleep(1)
-        except (URLError, TimeoutError, json.JSONDecodeError) as e:
-            if attempt == 2:
+        except URLError as e:
+            if not INSECURE_SSL and _is_cert_error(e):
+                INSECURE_SSL = True
+                print(
+                    "[안내] 이 네트워크의 보안 프로그램(HTTPS 검사 프록시)이 인증서를 가로채는 것으로 보여, "
+                    "인증서 검증을 건너뛰고 다시 시도합니다. (내려받는 데이터는 로그인 없는 공개 정보라 안전합니다)",
+                    file=sys.stderr,
+                )
+                continue  # 방금 실패는 횟수에서 차감하지 않고 즉시 재시도
+            tries_left -= 1
+            if tries_left <= 0:
                 print(f"[경고] {url} 요청 실패 ({e})", file=sys.stderr)
                 return None
             time.sleep(1)
+        except (TimeoutError, json.JSONDecodeError) as e:
+            tries_left -= 1
+            if tries_left <= 0:
+                print(f"[경고] {url} 요청 실패 ({e})", file=sys.stderr)
+                return None
+            time.sleep(1)
+    return None
     return None
 
 
@@ -245,22 +353,23 @@ def find_representative_segments(spec: ProgramSpec, target_date: date, store: Da
     return segments
 
 
-def summarize_segments(segments: list[dict]) -> str:
+def summarize_segments(segments: list[dict], simplify: bool = True) -> str:
     seen: list[str] = []
     seen_set: set[str] = set()
     for seg in segments:
         brand = seg.get("brand", "")
         name = seg.get("name", "")
         category = seg.get("category")
-        star = "★" if is_appliance(name, brand, category) else ""
-        label = f"{star}{brand} {name}".strip() if brand else f"{star}{name}"
+        star = "★" if is_appliance(name, brand, category) else ""  # 원래 상품명 기준으로 가전 판별
+        display_name = simplify_name(name) if simplify else name
+        label = f"{star}{brand} {display_name}".strip() if brand else f"{star}{display_name}"
         if label not in seen_set:
             seen_set.add(label)
             seen.append(label)
     return ", ".join(seen) if seen else ""
 
 
-def build_report(base_date: date, week_offset: int, store: DataStore) -> tuple[str, str]:
+def build_report(base_date: date, week_offset: int, store: DataStore, simplify: bool = True) -> tuple[str, str]:
     monday = get_week_monday(base_date, week_offset)
     lines = []
     prev_weekday = None
@@ -275,7 +384,7 @@ def build_report(base_date: date, week_offset: int, store: DataStore) -> tuple[s
         if not segments:
             item_text = "(데이터 미공개)"
         else:
-            item_text = summarize_segments(segments) or "(상품 정보 없음)"
+            item_text = summarize_segments(segments, simplify=simplify) or "(상품 정보 없음)"
 
         line = f"{prefix} {spec.company} {spec.celeb}({date_tag}) {item_text}".rstrip()
         lines.append(line)
@@ -291,6 +400,8 @@ def main() -> None:
     parser.add_argument("--output", type=str, default=None, help="결과를 저장할 txt 파일 경로")
     parser.add_argument("--no-open", action="store_true",
                          help="저장 후 메모장(기본 텍스트 앱)으로 자동으로 열지 않음 (예약 작업 등 무인 실행 시 사용)")
+    parser.add_argument("--full-names", action="store_true",
+                         help="상품명을 줄이지 않고 원래(긴) 상품명 그대로 표시")
     args = parser.parse_args()
 
     if args.date:
@@ -298,15 +409,16 @@ def main() -> None:
     else:
         base_date = date.today()
 
+    simplify = not args.full_names
     store = DataStore()
     sections: list[str] = []
 
     if args.weeks in ("this", "both"):
-        body, rng = build_report(base_date, 0, store)
+        body, rng = build_report(base_date, 0, store, simplify=simplify)
         sections.append(f"동업계 고정PGM 모니터링(금주, {rng})\n{body}")
 
     if args.weeks in ("next", "both"):
-        body, rng = build_report(base_date, 1, store)
+        body, rng = build_report(base_date, 1, store, simplify=simplify)
         sections.append(f"동업계 고정PGM 모니터링(차주, {rng})\n{body}")
 
     output_text = "\n\n".join(sections)
