@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>로봇청소기 편성 월간 취합</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card-bg: #ffffff;
+    --border: #e3e5e9;
+    --text: #1b1f24;
+    --text-muted: #6b7280;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --tag-live: #0e7c66;
+    --tag-live-bg: #e6f6f1;
+    --tag-data: #b45309;
+    --tag-data-bg: #fdf1e0;
+    --mono-bg: #0f172a;
+    --mono-text: #e2e8f0;
+    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 12px rgba(0,0,0,0.03);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111418;
+      --card-bg: #1a1e24;
+      --border: #2b3038;
+      --text: #e7e9ec;
+      --text-muted: #9aa1ac;
+      --accent: #5b8def;
+      --accent-hover: #7ba3f2;
+      --tag-live: #34d399;
+      --tag-live-bg: rgba(52,211,153,0.12);
+      --tag-data: #f5a742;
+      --tag-data-bg: rgba(245,167,66,0.12);
+      --mono-bg: #0b0f14;
+      --mono-text: #d7dde5;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 1px 12px rgba(0,0,0,0.25);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+  header h1 {
+    font-size: 1.4rem;
+    margin: 0 0 4px;
+  }
+  header p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0 0 24px;
+  }
+  .panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+  }
+  .controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .controls label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  select, button {
+    font-size: 0.95rem;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-family: inherit;
+  }
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  button.primary:hover { background: var(--accent-hover); }
+  button.primary:disabled { opacity: 0.6; cursor: default; }
+  button.secondary {
+    cursor: pointer;
+  }
+  .status {
+    margin-top: 12px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    min-height: 1.2em;
+  }
+  .status.error { color: #dc2626; }
+  #resultArea { display: none; }
+  .day-group {
+    margin-bottom: 14px;
+  }
+  .day-group h3 {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin: 0 0 8px;
+    font-weight: 600;
+  }
+  .entry-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 8px 4px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.95rem;
+  }
+  .entry-row:last-child { border-bottom: none; }
+  .tag {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 6px;
+    width: 46px;
+    text-align: center;
+  }
+  .tag.live { color: var(--tag-live); background: var(--tag-live-bg); }
+  .tag.data { color: var(--tag-data); background: var(--tag-data-bg); }
+  .entry-model { flex: 1; }
+  .entry-extra { color: var(--text-muted); font-size: 0.85rem; }
+  .entry-time { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 520px) {
+    .summary-grid { grid-template-columns: 1fr; }
+  }
+  .summary-block h4 {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0 0 10px;
+  }
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    font-size: 0.9rem;
+    border-bottom: 1px dashed var(--border);
+  }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-row .count { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .copy-block { margin-top: 20px; }
+  .copy-block textarea {
+    width: 100%;
+    min-height: 160px;
+    background: var(--mono-bg);
+    color: var(--mono-text);
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    resize: vertical;
+    white-space: pre;
+  }
+  .empty-msg {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    padding: 12px 0;
+  }
+  footer {
+    margin-top: 32px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🤖 로봇청소기 편성 월간 취합</h1>
+    <p>HD(현대) · GS샵 · CJ온스타일 · 롯데홈쇼핑(LT) — 라이브 + 디지털방송</p>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <label for="monthSelect">조회할 달</label>
+      <select id="monthSelect"></select>
+      <button class="primary" id="loadBtn">불러오기</button>
+    </div>
+    <div class="status" id="statusMsg"></div>
+  </div>
+
+  <div class="panel" id="resultArea">
+    <div id="listArea"></div>
+
+    <div class="summary-grid" id="summaryArea"></div>
+
+    <div class="copy-block">
+      <div class="controls" style="margin-bottom:8px;">
+        <label style="flex:1;">텍스트로 복사해서 공유하기</label>
+        <button class="secondary" id="copyBtn">복사하기</button>
+      </div>
+      <textarea id="copyText" readonly></textarea>
+    </div>
+  </div>
+
+  <footer>
+    데이터 출처: <a href="https://hdmzp.github.io/hdhs/" target="_blank" rel="noopener">hdmzp.github.io/hdhs</a> (공개 정보, 로그인 불필요)<br>
+    안마의자·헬스로봇·렌탈 상품과 새벽 06시 이전 조건형성용 편성은 자동으로 제외됩니다.
+  </footer>
+</div>
+
+<script>
+// ===== robot_vacuum_monitor.py 판별/집계 로직 (JS 포팅본) =====
+const COMPANIES = ["HD", "GS", "CJ", "LT"];
+const KIND_LABEL = { live: "L", data: "D" };
+const WEEKDAY_KO = ["월", "화", "수", "목", "금", "토", "일"];
+
+const ROBOT_ONLY_BRANDS = new Set([
+  "로보락", "드리미", "존알", "오로와", "나르왈", "에코백스", "타이탈", "아이닉", "유진로봇",
+]);
+const EXCLUDE_KEYWORDS = ["안마의자", "헬스로봇", "렌탈"];
+const EXCLUDE_CATEGORIES = new Set(["일반렌탈"]);
+const CONDITIONING_CUTOFF = "06:00";
+
+function isRobotVacuum(brand, product, category) {
+  brand = (brand || "").trim();
+  const text = `${brand} ${product}`;
+  if (EXCLUDE_KEYWORDS.some((kw) => text.includes(kw))) return false;
+  if (category && EXCLUDE_CATEGORIES.has(category)) return false;
+  if (ROBOT_ONLY_BRANDS.has(brand)) return true;
+  if (text.includes("로봇")) return true;
+  return false;
+}
+
+function isConditioningBroadcast(start) {
+  if (!start) return false;
+  return start < CONDITIONING_CUTOFF;
+}
+
+const MODEL_PATTERNS = [
+  /S\d{1,2}\s*MaxV(?:\s*Ultra)?/i,
+  /Q\s?Revo\s?(?:Edge\s?\d+|2\s?Pro|C\s?Pro)/i,
+  /F25\s*(?:ACE|Ultra|Steam)/i,
+  /\bH\d{2,3}\b/,
+  /X\d\s*Max/i,
+  /\d+세대/,
+];
+const BRACKET_RE = /\[[^\]]*\]/g;
+const PAREN_RE = /\([^)]*\)/g;
+const SUFFIX_WORDS = [
+  "로봇청소기", "로봇 청소기", "습건식 무선 청소기", "무선 스팀 습건식 청소기",
+  "스팀 습건식 청소기", "습건식 청소기", "무선청소기", "물걸레청소기", "청소기",
+  "필터", "전용",
+];
+
+function extractModel(brand, product) {
+  for (const pat of MODEL_PATTERNS) {
+    const m = product.match(pat);
+    if (m) {
+      let model = m[0].replace(/\s+/g, " ").trim();
+      model = model.replace(/Q\s?Revo/i, "Qrevo");
+      return model;
+    }
+  }
+  let s = product.replace(BRACKET_RE, " ").replace(PAREN_RE, " ");
+  if (brand) s = s.split(brand).join(" ");
+  for (const w of SUFFIX_WORDS) s = s.split(w).join(" ");
+  s = s.replace(/\s+/g, " ").trim().replace(/^[-_/·\s]+|[-_/·\s]+$/g, "");
+  if (!s) s = product.trim();
+  return s.length <= 22 ? s : s.slice(0, 22).trimEnd() + "…";
+}
+
+function weekdayKo(dateStr) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  const idx = (dt.getUTCDay() + 6) % 7;
+  return WEEKDAY_KO[idx];
+}
+
+function dedupeEntries(entries) {
+  const seen = new Set();
+  const result = [];
+  for (const e of entries) {
+    const key = [e.date, e.company, e.kind, e.start, e.model].join("|");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(e);
+  }
+  return result;
+}
+
+async function fetchJson(url) {
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch (e) {
+    return null;
+  }
+}
+
+async function collectMonth(yearMonth, onProgress) {
+  const entries = [];
+  let done = 0;
+  const total = COMPANIES.length * 2;
+  for (const company of COMPANIES) {
+    for (const kind of ["live", "data"]) {
+      const url = `https://hdmzp.github.io/hdhs/homeshopping/${company}_${kind}/${yearMonth}.json`;
+      const data = await fetchJson(url);
+      done++;
+      if (onProgress) onProgress(done, total);
+      if (!data || !data.days) continue;
+      for (const [dateStr, items] of Object.entries(data.days)) {
+        const weekday = weekdayKo(dateStr);
+        for (const it of items) {
+          const brand = (it.brand || "").trim();
+          const product = (it.product || "").trim();
+          const category = it.category;
+          const start = it.start || "";
+          if (!product || !isRobotVacuum(brand, product, category)) continue;
+          if (isConditioningBroadcast(start)) continue;
+          entries.push({
+            date: dateStr, weekday, company, kind, start, end: it.end || "",
+            brand, model: extractModel(brand, product),
+          });
+        }
+      }
+    }
+  }
+  entries.sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+  return entries;
+}
+
+function formatReportText(yearMonth, rawEntries) {
+  const [y, m] = yearMonth.split("-");
+  const lines = [`■ ${y}.${m} 로봇청소기 편성 (HD/GS/CJ/LT · 라이브+디지털방송)`];
+  if (!rawEntries.length) {
+    lines.push("(해당 월에는 아직 로봇청소기 편성 데이터가 없습니다)");
+    return lines.join("\n");
+  }
+  const entries = dedupeEntries(rawEntries);
+  const slotModels = new Map();
+  for (const e of entries) {
+    const slotKey = [e.date, e.company, e.kind, e.start].join("|");
+    if (!slotModels.has(slotKey)) slotModels.set(slotKey, []);
+    const models = slotModels.get(slotKey);
+    if (!models.includes(e.model)) models.push(e.model);
+  }
+  let currentDate = null;
+  const renderedSlots = new Set();
+  for (const e of entries) {
+    if (e.date !== currentDate) {
+      currentDate = e.date;
+      lines.push("");
+      lines.push(`[${e.date}(${e.weekday})]`);
+    }
+    const slotKey = [e.date, e.company, e.kind, e.start].join("|");
+    if (renderedSlots.has(slotKey)) continue;
+    renderedSlots.add(slotKey);
+    const models = slotModels.get(slotKey);
+    const kindLabel = KIND_LABEL[e.kind] || e.kind;
+    const extra = models.length - 1;
+    if (extra > 0) lines.push(`${e.company}(${kindLabel}) ${models[0]} 외 ${extra}건 ${e.start}`);
+    else lines.push(`${e.company}(${kindLabel}) ${models[0]} ${e.start}`);
+  }
+  lines.push("");
+  lines.push("=".repeat(32));
+  lines.push("■ 채널별 방송 횟수");
+  const companyCounts = new Map();
+  for (const slotKey of slotModels.keys()) {
+    const company = slotKey.split("|")[1];
+    companyCounts.set(company, (companyCounts.get(company) || 0) + 1);
+  }
+  for (const company of COMPANIES) {
+    const count = companyCounts.get(company) || 0;
+    if (count) lines.push(`  ${company}  ${count}건`);
+  }
+  lines.push("");
+  lines.push("■ 품목별 방송 횟수");
+  const modelCounts = new Map();
+  for (const e of entries) modelCounts.set(e.model, (modelCounts.get(e.model) || 0) + 1);
+  const sortedModels = [...modelCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  for (const [model, count] of sortedModels) lines.push(`  ${model}  ${count}건`);
+  return lines.join("\n");
+}
+
+// ===== 화면 렌더링 =====
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+function renderResults(yearMonth, rawEntries) {
+  const listArea = document.getElementById("listArea");
+  const summaryArea = document.getElementById("summaryArea");
+  listArea.innerHTML = "";
+  summaryArea.innerHTML = "";
+
+  if (!rawEntries.length) {
+    listArea.appendChild(el("div", "empty-msg", "해당 월에는 아직 로봇청소기 편성 데이터가 없습니다."));
+    document.getElementById("copyText").value = formatReportText(yearMonth, rawEntries);
+    return;
+  }
+
+  const entries = dedupeEntries(rawEntries);
+  const slotModels = new Map();
+  for (const e of entries) {
+    const slotKey = [e.date, e.company, e.kind, e.start].join("|");
+    if (!slotModels.has(slotKey)) slotModels.set(slotKey, []);
+    const models = slotModels.get(slotKey);
+    if (!models.includes(e.model)) models.push(e.model);
+  }
+
+  let currentDate = null;
+  let dayDiv = null;
+  const renderedSlots = new Set();
+  for (const e of entries) {
+    if (e.date !== currentDate) {
+      currentDate = e.date;
+      dayDiv = el("div", "day-group");
+      dayDiv.appendChild(el("h3", null, `${e.date} (${e.weekday})`));
+      listArea.appendChild(dayDiv);
+    }
+    const slotKey = [e.date, e.company, e.kind, e.start].join("|");
+    if (renderedSlots.has(slotKey)) continue;
+    renderedSlots.add(slotKey);
+    const models = slotModels.get(slotKey);
+    const extra = models.length - 1;
+
+    const row = el("div", "entry-row");
+    const tag = el("span", `tag ${e.kind}`, `${e.company}(${KIND_LABEL[e.kind] || e.kind})`);
+    const modelSpan = el("span", "entry-model", models[0]);
+    if (extra > 0) modelSpan.appendChild(el("span", "entry-extra", ` 외 ${extra}건`));
+    const timeSpan = el("span", "entry-time", e.start);
+    row.appendChild(tag);
+    row.appendChild(modelSpan);
+    row.appendChild(timeSpan);
+    dayDiv.appendChild(row);
+  }
+
+  // 채널별 방송 횟수
+  const companyCounts = new Map();
+  for (const slotKey of slotModels.keys()) {
+    const company = slotKey.split("|")[1];
+    companyCounts.set(company, (companyCounts.get(company) || 0) + 1);
+  }
+  const companyBlock = el("div", "summary-block");
+  companyBlock.appendChild(el("h4", null, "채널별 방송 횟수"));
+  for (const company of COMPANIES) {
+    const count = companyCounts.get(company) || 0;
+    if (!count) continue;
+    const row = el("div", "summary-row");
+    row.appendChild(el("span", null, company));
+    row.appendChild(el("span", "count", `${count}건`));
+    companyBlock.appendChild(row);
+  }
+  summaryArea.appendChild(companyBlock);
+
+  // 품목별 방송 횟수
+  const modelCounts = new Map();
+  for (const e of entries) modelCounts.set(e.model, (modelCounts.get(e.model) || 0) + 1);
+  const sortedModels = [...modelCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const modelBlock = el("div", "summary-block");
+  modelBlock.appendChild(el("h4", null, "품목별 방송 횟수"));
+  for (const [model, count] of sortedModels) {
+    const row = el("div", "summary-row");
+    row.appendChild(el("span", null, model));
+    row.appendChild(el("span", "count", `${count}건`));
+    modelBlock.appendChild(row);
+  }
+  summaryArea.appendChild(modelBlock);
+
+  document.getElementById("copyText").value = formatReportText(yearMonth, rawEntries);
+}
+
+// ===== 월 선택 드롭다운 채우기 (이번 달 기준 앞뒤 몇 달) =====
+function populateMonthSelect() {
+  const sel = document.getElementById("monthSelect");
+  const now = new Date();
+  const options = [];
+  for (let offset = 1; offset >= -5; offset--) {
+    const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    options.push(ym);
+  }
+  for (const ym of options) {
+    const opt = document.createElement("option");
+    opt.value = ym;
+    const [y, m] = ym.split("-");
+    opt.textContent = `${y}년 ${parseInt(m, 10)}월`;
+    sel.appendChild(opt);
+  }
+  const thisYm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  sel.value = thisYm;
+}
+
+async function loadMonth() {
+  const yearMonth = document.getElementById("monthSelect").value;
+  const statusMsg = document.getElementById("statusMsg");
+  const loadBtn = document.getElementById("loadBtn");
+  const resultArea = document.getElementById("resultArea");
+
+  loadBtn.disabled = true;
+  resultArea.style.display = "none";
+  statusMsg.className = "status";
+  statusMsg.textContent = "불러오는 중... (0/8)";
+
+  try {
+    const entries = await collectMonth(yearMonth, (done, total) => {
+      statusMsg.textContent = `불러오는 중... (${done}/${total})`;
+    });
+    renderResults(yearMonth, entries);
+    resultArea.style.display = "block";
+    statusMsg.textContent = `완료 — 총 ${dedupeEntries(entries).length}건 (같은 시간대 동시판매 묶음 반영)`;
+  } catch (e) {
+    statusMsg.className = "status error";
+    statusMsg.textContent = "데이터를 불러오는 중 문제가 발생했어요. 인터넷 연결을 확인하고 다시 시도해주세요.";
+    console.error(e);
+  } finally {
+    loadBtn.disabled = false;
+  }
+}
+
+document.getElementById("loadBtn").addEventListener("click", loadMonth);
+document.getElementById("copyBtn").addEventListener("click", () => {
+  const ta = document.getElementById("copyText");
+  ta.select();
+  navigator.clipboard.writeText(ta.value).then(() => {
+    const btn = document.getElementById("copyBtn");
+    const original = btn.textContent;
+    btn.textContent = "복사됨!";
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  }).catch(() => {
+    // 클립보드 API 실패 시 execCommand로 대체
+    document.execCommand("copy");
+  });
+});
+
+populateMonthSelect();
+loadMonth();
+</script>
+</body>
+</html>
