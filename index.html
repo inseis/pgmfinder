@@ -20,6 +20,8 @@
     --mono-bg: #0f172a;
     --mono-text: #e2e8f0;
     --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 12px rgba(0,0,0,0.03);
+    --sun: #dc2626;
+    --sat: #2563eb;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -37,6 +39,8 @@
       --mono-bg: #0b0f14;
       --mono-text: #d7dde5;
       --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 1px 12px rgba(0,0,0,0.25);
+      --sun: #f87171;
+      --sat: #7ba3f2;
     }
   }
   * { box-sizing: border-box; }
@@ -48,7 +52,7 @@
     line-height: 1.5;
   }
   .wrap {
-    max-width: 760px;
+    max-width: 900px;
     margin: 0 auto;
     padding: 32px 20px 80px;
   }
@@ -108,6 +112,29 @@
   }
   .status.error { color: #dc2626; }
   #resultArea { display: none; }
+
+  .view-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .view-tab {
+    border: none;
+    background: none;
+    padding: 8px 6px 10px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .view-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
   .day-group {
     margin-bottom: 14px;
   }
@@ -162,6 +189,94 @@
   }
   .summary-row:last-child { border-bottom: none; }
   .summary-row .count { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    margin-bottom: 16px;
+    font-size: 0.82rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text);
+  }
+  .legend-item.unavailable {
+    color: var(--text-muted);
+    opacity: 0.55;
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .legend-note {
+    width: 100%;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    margin-top: -2px;
+  }
+
+  .calendar-wrap {
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(108px, 1fr));
+    gap: 6px;
+    min-width: 760px;
+  }
+  .calendar-weekday {
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    padding: 4px 0 8px;
+  }
+  .calendar-weekday.sun { color: var(--sun); }
+  .calendar-weekday.sat { color: var(--sat); }
+  .calendar-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 96px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px;
+  }
+  .calendar-cell.empty {
+    border: none;
+    background: none;
+  }
+  .calendar-date {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+  .calendar-date.sun { color: var(--sun); }
+  .calendar-date.sat { color: var(--sat); }
+  .calendar-chips {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    overflow-y: auto;
+    max-height: 68px;
+  }
+  .chip {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 5px;
+    border-radius: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: default;
+  }
+
   .copy-block { margin-top: 20px; }
   .copy-block textarea {
     width: 100%;
@@ -207,9 +322,22 @@
   </div>
 
   <div class="panel" id="resultArea">
-    <div id="listArea"></div>
+    <div class="view-tabs">
+      <button class="view-tab active" id="tabList" type="button">📋 목록으로 보기</button>
+      <button class="view-tab" id="tabCalendar" type="button">📅 달력으로 보기</button>
+    </div>
 
-    <div class="summary-grid" id="summaryArea"></div>
+    <div id="listView">
+      <div id="listArea"></div>
+      <div class="summary-grid" id="summaryArea"></div>
+    </div>
+
+    <div id="calendarView" style="display:none;">
+      <div class="legend" id="legendArea"></div>
+      <div class="calendar-wrap">
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+    </div>
 
     <div class="copy-block">
       <div class="controls" style="margin-bottom:8px;">
@@ -222,7 +350,8 @@
 
   <footer>
     데이터 출처: <a href="https://hdmzp.github.io/hdhs/" target="_blank" rel="noopener">hdmzp.github.io/hdhs</a> (공개 정보, 로그인 불필요)<br>
-    안마의자·헬스로봇·렌탈 상품과 새벽 06시 이전 조건형성용 편성은 자동으로 제외됩니다.
+    안마의자·헬스로봇·렌탈 상품과 새벽 06시 이전 조건형성용 편성은 자동으로 제외됩니다.<br>
+    달력 뷰의 KT·홈앤·NS·SK 색상은 미리 준비해둔 것으로, 데이터 소스(hdmzp)가 아직 지원하지 않아 실제 표시는 HD/GS/CJ/LT만 됩니다.
   </footer>
 </div>
 
@@ -238,6 +367,19 @@ const ROBOT_ONLY_BRANDS = new Set([
 const EXCLUDE_KEYWORDS = ["안마의자", "헬스로봇", "렌탈"];
 const EXCLUDE_CATEGORIES = new Set(["일반렌탈"]);
 const CONDITIONING_CUTOFF = "06:00";
+
+// 채널별 색상 (달력 뷰). HD/GS/CJ/LT는 실제 데이터가 채워지고,
+// KT/홈앤/NS/SK는 hdmzp가 아직 지원하지 않아 범례에만 옅게 표시됩니다.
+const CHANNEL_COLORS = {
+  HD: { bg: "#f5c518", text: "#1b1f24", label: "HD(현대)", available: true },
+  GS: { bg: "#8bc34a", text: "#1b1f24", label: "GS샵", available: true },
+  CJ: { bg: "#7c3aed", text: "#ffffff", label: "CJ온스타일", available: true },
+  LT: { bg: "#e11d48", text: "#ffffff", label: "롯데홈쇼핑", available: true },
+  KT: { bg: "#9ca3af", text: "#1b1f24", label: "KT알파쇼핑", available: false },
+  홈앤: { bg: "#f97316", text: "#ffffff", label: "홈앤쇼핑", available: false },
+  NS: { bg: "#38bdf8", text: "#1b1f24", label: "NS홈쇼핑", available: false },
+  SK: { bg: "#b4a7d6", text: "#1b1f24", label: "SK스토아", available: false },
+};
 
 function isRobotVacuum(brand, product, category) {
   brand = (brand || "").trim();
@@ -306,6 +448,42 @@ function dedupeEntries(entries) {
   return result;
 }
 
+// entries(원본) -> 실제로 화면에 그릴 "한 줄(슬롯)" 단위 목록. 리스트뷰/달력뷰 공통 사용.
+function buildDisplayRows(rawEntries) {
+  const entries = dedupeEntries(rawEntries);
+  const slotMap = new Map();
+  for (const e of entries) {
+    const slotKey = [e.date, e.company, e.kind, e.start].join("|");
+    if (!slotMap.has(slotKey)) {
+      slotMap.set(slotKey, {
+        date: e.date, weekday: e.weekday, company: e.company, kind: e.kind,
+        start: e.start, models: [],
+      });
+    }
+    const rec = slotMap.get(slotKey);
+    if (!rec.models.includes(e.model)) rec.models.push(e.model);
+  }
+  const rows = [...slotMap.values()];
+  rows.sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+  return rows;
+}
+
+// 일요일 시작(일월화수목금토) 달력 그리드. 앞뒤 빈 칸은 null.
+function buildCalendarGrid(yearMonth) {
+  const [y, m] = yearMonth.split("-").map(Number);
+  const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const firstWeekday = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
+  const cells = [];
+  for (let i = 0; i < firstWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push(`${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
+  }
+  while (cells.length % 7 !== 0) cells.push(null);
+  const weeks = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  return weeks;
+}
+
 async function fetchJson(url) {
   try {
     const r = await fetch(url);
@@ -355,45 +533,31 @@ function formatReportText(yearMonth, rawEntries) {
     lines.push("(해당 월에는 아직 로봇청소기 편성 데이터가 없습니다)");
     return lines.join("\n");
   }
-  const entries = dedupeEntries(rawEntries);
-  const slotModels = new Map();
-  for (const e of entries) {
-    const slotKey = [e.date, e.company, e.kind, e.start].join("|");
-    if (!slotModels.has(slotKey)) slotModels.set(slotKey, []);
-    const models = slotModels.get(slotKey);
-    if (!models.includes(e.model)) models.push(e.model);
-  }
+  const rows = buildDisplayRows(rawEntries);
   let currentDate = null;
-  const renderedSlots = new Set();
-  for (const e of entries) {
-    if (e.date !== currentDate) {
-      currentDate = e.date;
+  for (const r of rows) {
+    if (r.date !== currentDate) {
+      currentDate = r.date;
       lines.push("");
-      lines.push(`[${e.date}(${e.weekday})]`);
+      lines.push(`[${r.date}(${r.weekday})]`);
     }
-    const slotKey = [e.date, e.company, e.kind, e.start].join("|");
-    if (renderedSlots.has(slotKey)) continue;
-    renderedSlots.add(slotKey);
-    const models = slotModels.get(slotKey);
-    const kindLabel = KIND_LABEL[e.kind] || e.kind;
-    const extra = models.length - 1;
-    if (extra > 0) lines.push(`${e.company}(${kindLabel}) ${models[0]} 외 ${extra}건 ${e.start}`);
-    else lines.push(`${e.company}(${kindLabel}) ${models[0]} ${e.start}`);
+    const kindLabel = KIND_LABEL[r.kind] || r.kind;
+    const extra = r.models.length - 1;
+    if (extra > 0) lines.push(`${r.company}(${kindLabel}) ${r.models[0]} 외 ${extra}건 ${r.start}`);
+    else lines.push(`${r.company}(${kindLabel}) ${r.models[0]} ${r.start}`);
   }
   lines.push("");
   lines.push("=".repeat(32));
   lines.push("■ 채널별 방송 횟수");
   const companyCounts = new Map();
-  for (const slotKey of slotModels.keys()) {
-    const company = slotKey.split("|")[1];
-    companyCounts.set(company, (companyCounts.get(company) || 0) + 1);
-  }
+  for (const r of rows) companyCounts.set(r.company, (companyCounts.get(r.company) || 0) + 1);
   for (const company of COMPANIES) {
     const count = companyCounts.get(company) || 0;
     if (count) lines.push(`  ${company}  ${count}건`);
   }
   lines.push("");
   lines.push("■ 품목별 방송 횟수");
+  const entries = dedupeEntries(rawEntries);
   const modelCounts = new Map();
   for (const e of entries) modelCounts.set(e.model, (modelCounts.get(e.model) || 0) + 1);
   const sortedModels = [...modelCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
@@ -409,7 +573,11 @@ function el(tag, cls, text) {
   return e;
 }
 
-function renderResults(yearMonth, rawEntries) {
+let lastYearMonth = null;
+let lastRawEntries = [];
+let currentView = "list";
+
+function renderListView(yearMonth, rawEntries) {
   const listArea = document.getElementById("listArea");
   const summaryArea = document.getElementById("summaryArea");
   listArea.innerHTML = "";
@@ -417,40 +585,25 @@ function renderResults(yearMonth, rawEntries) {
 
   if (!rawEntries.length) {
     listArea.appendChild(el("div", "empty-msg", "해당 월에는 아직 로봇청소기 편성 데이터가 없습니다."));
-    document.getElementById("copyText").value = formatReportText(yearMonth, rawEntries);
     return;
   }
 
-  const entries = dedupeEntries(rawEntries);
-  const slotModels = new Map();
-  for (const e of entries) {
-    const slotKey = [e.date, e.company, e.kind, e.start].join("|");
-    if (!slotModels.has(slotKey)) slotModels.set(slotKey, []);
-    const models = slotModels.get(slotKey);
-    if (!models.includes(e.model)) models.push(e.model);
-  }
-
+  const rows = buildDisplayRows(rawEntries);
   let currentDate = null;
   let dayDiv = null;
-  const renderedSlots = new Set();
-  for (const e of entries) {
-    if (e.date !== currentDate) {
-      currentDate = e.date;
+  for (const r of rows) {
+    if (r.date !== currentDate) {
+      currentDate = r.date;
       dayDiv = el("div", "day-group");
-      dayDiv.appendChild(el("h3", null, `${e.date} (${e.weekday})`));
+      dayDiv.appendChild(el("h3", null, `${r.date} (${r.weekday})`));
       listArea.appendChild(dayDiv);
     }
-    const slotKey = [e.date, e.company, e.kind, e.start].join("|");
-    if (renderedSlots.has(slotKey)) continue;
-    renderedSlots.add(slotKey);
-    const models = slotModels.get(slotKey);
-    const extra = models.length - 1;
-
+    const extra = r.models.length - 1;
     const row = el("div", "entry-row");
-    const tag = el("span", `tag ${e.kind}`, `${e.company}(${KIND_LABEL[e.kind] || e.kind})`);
-    const modelSpan = el("span", "entry-model", models[0]);
+    const tag = el("span", `tag ${r.kind}`, `${r.company}(${KIND_LABEL[r.kind] || r.kind})`);
+    const modelSpan = el("span", "entry-model", r.models[0]);
     if (extra > 0) modelSpan.appendChild(el("span", "entry-extra", ` 외 ${extra}건`));
-    const timeSpan = el("span", "entry-time", e.start);
+    const timeSpan = el("span", "entry-time", r.start);
     row.appendChild(tag);
     row.appendChild(modelSpan);
     row.appendChild(timeSpan);
@@ -459,10 +612,7 @@ function renderResults(yearMonth, rawEntries) {
 
   // 채널별 방송 횟수
   const companyCounts = new Map();
-  for (const slotKey of slotModels.keys()) {
-    const company = slotKey.split("|")[1];
-    companyCounts.set(company, (companyCounts.get(company) || 0) + 1);
-  }
+  for (const r of rows) companyCounts.set(r.company, (companyCounts.get(r.company) || 0) + 1);
   const companyBlock = el("div", "summary-block");
   companyBlock.appendChild(el("h4", null, "채널별 방송 횟수"));
   for (const company of COMPANIES) {
@@ -476,6 +626,7 @@ function renderResults(yearMonth, rawEntries) {
   summaryArea.appendChild(companyBlock);
 
   // 품목별 방송 횟수
+  const entries = dedupeEntries(rawEntries);
   const modelCounts = new Map();
   for (const e of entries) modelCounts.set(e.model, (modelCounts.get(e.model) || 0) + 1);
   const sortedModels = [...modelCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
@@ -488,8 +639,82 @@ function renderResults(yearMonth, rawEntries) {
     modelBlock.appendChild(row);
   }
   summaryArea.appendChild(modelBlock);
+}
 
-  document.getElementById("copyText").value = formatReportText(yearMonth, rawEntries);
+function renderLegend() {
+  const area = document.getElementById("legendArea");
+  area.innerHTML = "";
+  for (const c of Object.values(CHANNEL_COLORS)) {
+    const item = el("div", "legend-item" + (c.available ? "" : " unavailable"));
+    const dot = el("span", "legend-dot");
+    dot.style.background = c.bg;
+    item.appendChild(dot);
+    item.appendChild(el("span", null, c.label));
+    if (!c.available) item.title = "hdmzp 데이터 소스에 아직 없는 채널이라 편성이 표시되지 않아요";
+    area.appendChild(item);
+  }
+  area.appendChild(el("div", "legend-note", "* 회색 계열(KT·홈앤·NS·SK)은 데이터 소스 미지원으로 아직 채워지지 않습니다."));
+}
+
+function makeChip(row) {
+  const colors = CHANNEL_COLORS[row.company] || { bg: "#999999", text: "#ffffff" };
+  const kindLabel = KIND_LABEL[row.kind] || row.kind;
+  const extra = row.models.length - 1;
+  const modelText = row.models[0] + (extra > 0 ? ` 외 ${extra}건` : "");
+  const chip = el("div", "chip", `${row.company}(${kindLabel}) ${row.start}`);
+  chip.style.background = colors.bg;
+  chip.style.color = colors.text;
+  chip.title = `${row.company}(${kindLabel}) ${row.start} — ${modelText}`;
+  return chip;
+}
+
+function renderCalendarView(yearMonth, rawEntries) {
+  const grid = document.getElementById("calendarGrid");
+  grid.innerHTML = "";
+
+  const rows = buildDisplayRows(rawEntries);
+  const byDate = new Map();
+  for (const r of rows) {
+    if (!byDate.has(r.date)) byDate.set(r.date, []);
+    byDate.get(r.date).push(r);
+  }
+
+  const weekdayHeaders = ["일", "월", "화", "수", "목", "금", "토"];
+  weekdayHeaders.forEach((w, i) => {
+    const cls = "calendar-weekday" + (i === 0 ? " sun" : i === 6 ? " sat" : "");
+    grid.appendChild(el("div", cls, w));
+  });
+
+  const weeks = buildCalendarGrid(yearMonth);
+  for (const week of weeks) {
+    week.forEach((dateStr, i) => {
+      if (!dateStr) {
+        grid.appendChild(el("div", "calendar-cell empty"));
+        return;
+      }
+      const cell = el("div", "calendar-cell");
+      const dayNum = parseInt(dateStr.split("-")[2], 10);
+      const dateCls = "calendar-date" + (i === 0 ? " sun" : i === 6 ? " sat" : "");
+      cell.appendChild(el("div", dateCls, String(dayNum)));
+      const chipsWrap = el("div", "calendar-chips");
+      const dayRows = byDate.get(dateStr) || [];
+      for (const r of dayRows) chipsWrap.appendChild(makeChip(r));
+      cell.appendChild(chipsWrap);
+      grid.appendChild(cell);
+    });
+  }
+}
+
+function renderActiveView() {
+  if (currentView === "calendar") {
+    document.getElementById("listView").style.display = "none";
+    document.getElementById("calendarView").style.display = "block";
+    renderCalendarView(lastYearMonth, lastRawEntries);
+  } else {
+    document.getElementById("calendarView").style.display = "none";
+    document.getElementById("listView").style.display = "block";
+    renderListView(lastYearMonth, lastRawEntries);
+  }
 }
 
 // ===== 월 선택 드롭다운 채우기 (이번 달 기준 앞뒤 몇 달) =====
@@ -528,7 +753,10 @@ async function loadMonth() {
     const entries = await collectMonth(yearMonth, (done, total) => {
       statusMsg.textContent = `불러오는 중... (${done}/${total})`;
     });
-    renderResults(yearMonth, entries);
+    lastYearMonth = yearMonth;
+    lastRawEntries = entries;
+    renderActiveView();
+    document.getElementById("copyText").value = formatReportText(yearMonth, entries);
     resultArea.style.display = "block";
     statusMsg.textContent = `완료 — 총 ${dedupeEntries(entries).length}건 (같은 시간대 동시판매 묶음 반영)`;
   } catch (e) {
@@ -541,6 +769,18 @@ async function loadMonth() {
 }
 
 document.getElementById("loadBtn").addEventListener("click", loadMonth);
+document.getElementById("tabList").addEventListener("click", () => {
+  currentView = "list";
+  document.getElementById("tabList").classList.add("active");
+  document.getElementById("tabCalendar").classList.remove("active");
+  renderActiveView();
+});
+document.getElementById("tabCalendar").addEventListener("click", () => {
+  currentView = "calendar";
+  document.getElementById("tabCalendar").classList.add("active");
+  document.getElementById("tabList").classList.remove("active");
+  renderActiveView();
+});
 document.getElementById("copyBtn").addEventListener("click", () => {
   const ta = document.getElementById("copyText");
   ta.select();
@@ -555,6 +795,7 @@ document.getElementById("copyBtn").addEventListener("click", () => {
   });
 });
 
+renderLegend();
 populateMonthSelect();
 loadMonth();
 </script>
