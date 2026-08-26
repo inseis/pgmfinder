@@ -13,10 +13,6 @@
     --text-muted: #6b7280;
     --accent: #2563eb;
     --accent-hover: #1d4ed8;
-    --tag-live: #0e7c66;
-    --tag-live-bg: #e6f6f1;
-    --tag-data: #b45309;
-    --tag-data-bg: #fdf1e0;
     --mono-bg: #0f172a;
     --mono-text: #e2e8f0;
     --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 12px rgba(0,0,0,0.03);
@@ -32,10 +28,6 @@
       --text-muted: #9aa1ac;
       --accent: #5b8def;
       --accent-hover: #7ba3f2;
-      --tag-live: #34d399;
-      --tag-live-bg: rgba(52,211,153,0.12);
-      --tag-data: #f5a742;
-      --tag-data-bg: rgba(245,167,66,0.12);
       --mono-bg: #0b0f14;
       --mono-text: #d7dde5;
       --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 1px 12px rgba(0,0,0,0.25);
@@ -162,8 +154,6 @@
     width: 46px;
     text-align: center;
   }
-  .tag.live { color: var(--tag-live); background: var(--tag-live-bg); }
-  .tag.data { color: var(--tag-data); background: var(--tag-data-bg); }
   .entry-model { flex: 1; }
   .entry-extra { color: var(--text-muted); font-size: 0.85rem; }
   .entry-time { color: var(--text-muted); font-variant-numeric: tabular-nums; }
@@ -600,7 +590,10 @@ function renderListView(yearMonth, rawEntries) {
     }
     const extra = r.models.length - 1;
     const row = el("div", "entry-row");
-    const tag = el("span", `tag ${r.kind}`, `${r.company}(${KIND_LABEL[r.kind] || r.kind})`);
+    const tagColors = CHANNEL_COLORS[r.company] || { bg: "#999999", text: "#ffffff" };
+    const tag = el("span", "tag", `${r.company}(${KIND_LABEL[r.kind] || r.kind})`);
+    tag.style.background = tagColors.bg;
+    tag.style.color = tagColors.text;
     const modelSpan = el("span", "entry-model", r.models[0]);
     if (extra > 0) modelSpan.appendChild(el("span", "entry-extra", ` 외 ${extra}건`));
     const timeSpan = el("span", "entry-time", r.start);
