@@ -303,57 +303,374 @@
     color: var(--text-muted);
   }
   footer a { color: var(--accent); }
+
+  .page-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .page-tab {
+    flex: 1;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text-muted);
+    border-radius: 10px;
+    padding: 12px 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+  }
+  .page-tab.active {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--card-bg));
+  }
+
+  .hint {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin: 4px 0 14px;
+    line-height: 1.5;
+  }
+  h3 { font-size: 1.02rem; margin: 0 0 12px; }
+  .section-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 22px 0 10px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .section-title:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
+  input[type="text"], input[type="number"], input[type="date"], input[type="time"], textarea {
+    font-size: 0.92rem;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-family: inherit;
+    width: 100%;
+  }
+  textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px 14px;
+  }
+  @media (max-width: 700px) {
+    .form-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 480px) {
+    .form-grid { grid-template-columns: 1fr; }
+  }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field.span2 { grid-column: span 2; }
+  .field.span3 { grid-column: 1 / -1; }
+  .field label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
+  .field .readout {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--accent);
+    padding: 8px 10px;
+    background: var(--bg);
+    border-radius: 8px;
+    border: 1px dashed var(--border);
+  }
+
+  .product-row {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .product-row .form-grid { grid-template-columns: repeat(3, 1fr); }
+  .product-row-remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
+
+  .lib-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .lib-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .lib-item-name { font-weight: 700; font-size: 0.92rem; }
+  .lib-item-sub { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+  .lib-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .lib-item-actions button {
+    padding: 5px 10px;
+    font-size: 0.78rem;
+  }
+  .lib-empty { font-size: 0.85rem; color: var(--text-muted); }
+
+  .lib-form {
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 14px;
+    margin-top: 12px;
+    background: color-mix(in srgb, var(--accent) 5%, var(--card-bg));
+  }
+
+  .ref-status { font-size: 0.85rem; color: var(--text-muted); margin-top: 6px; min-height: 1.2em; }
+  .ref-status.error { color: #dc2626; }
+  .ref-status.ok { color: #16a34a; }
+
+  .doc-preview {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 0.82rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    background: var(--mono-bg);
+    color: var(--mono-text);
+    border-radius: 10px;
+    padding: 16px;
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>🤖 로봇청소기 편성 월간 취합</h1>
+    <h1>🤖 로봇청소기 편성 · 회의자료 도우미</h1>
     <p>HD(현대) · GS샵 · CJ온스타일 · 롯데홈쇼핑(LT) — 라이브 + 디지털방송</p>
   </header>
 
-  <div class="panel">
-    <div class="controls">
-      <label for="monthSelect">조회할 달</label>
-      <select id="monthSelect"></select>
-      <button class="primary" id="loadBtn">불러오기</button>
-    </div>
-    <div class="status" id="statusMsg"></div>
+  <div class="page-tabs">
+    <button class="page-tab active" id="pageTabSchedule" type="button">📅 편성 조회</button>
+    <button class="page-tab" id="pageTabDoc" type="button">📝 회의자료 만들기</button>
   </div>
 
-  <div class="panel" id="resultArea">
-    <div class="view-tabs">
-      <button class="view-tab active" id="tabList" type="button">📋 목록으로 보기</button>
-      <button class="view-tab" id="tabCalendar" type="button">📅 달력으로 보기</button>
+  <div id="page-schedule">
+    <div class="panel">
+      <div class="controls">
+        <label for="monthSelect">조회할 달</label>
+        <select id="monthSelect"></select>
+        <button class="primary" id="loadBtn">불러오기</button>
+      </div>
+      <div class="status" id="statusMsg"></div>
     </div>
 
-    <div id="listView">
-      <div id="listArea"></div>
-      <div class="summary-grid" id="summaryArea"></div>
-    </div>
+    <div class="panel" id="resultArea">
+      <div class="view-tabs">
+        <button class="view-tab active" id="tabList" type="button">📋 목록으로 보기</button>
+        <button class="view-tab" id="tabCalendar" type="button">📅 달력으로 보기</button>
+      </div>
 
-    <div id="calendarView" style="display:none;">
-      <div class="legend" id="legendArea"></div>
-      <div class="calendar-wrap">
-        <div class="calendar-grid" id="calendarGrid"></div>
+      <div id="listView">
+        <div id="listArea"></div>
+        <div class="summary-grid" id="summaryArea"></div>
+      </div>
+
+      <div id="calendarView" style="display:none;">
+        <div class="legend" id="legendArea"></div>
+        <div class="calendar-wrap">
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+      </div>
+
+      <div class="copy-block">
+        <div class="controls" style="margin-bottom:8px;">
+          <label style="flex:1;">텍스트로 복사해서 공유하기</label>
+          <button class="secondary" id="copyBtn">복사하기</button>
+        </div>
+        <textarea id="copyText" readonly></textarea>
       </div>
     </div>
 
-    <div class="copy-block">
-      <div class="controls" style="margin-bottom:8px;">
-        <label style="flex:1;">텍스트로 복사해서 공유하기</label>
-        <button class="secondary" id="copyBtn">복사하기</button>
-      </div>
-      <textarea id="copyText" readonly></textarea>
-    </div>
+    <footer>
+      데이터 출처: <a href="https://hdmzp.github.io/hdhs/" target="_blank" rel="noopener">hdmzp.github.io/hdhs</a> (공개 정보, 로그인 불필요)<br>
+      안마의자·헬스로봇·렌탈 상품과 새벽 06시 이전 조건형성용 편성은 자동으로 제외됩니다.<br>
+      달력 뷰의 KT·홈앤·NS·SK 색상은 미리 준비해둔 것으로, 데이터 소스(hdmzp)가 아직 지원하지 않아 실제 표시는 HD/GS/CJ/LT만 됩니다.
+    </footer>
   </div>
 
-  <footer>
-    데이터 출처: <a href="https://hdmzp.github.io/hdhs/" target="_blank" rel="noopener">hdmzp.github.io/hdhs</a> (공개 정보, 로그인 불필요)<br>
-    안마의자·헬스로봇·렌탈 상품과 새벽 06시 이전 조건형성용 편성은 자동으로 제외됩니다.<br>
-    달력 뷰의 KT·홈앤·NS·SK 색상은 미리 준비해둔 것으로, 데이터 소스(hdmzp)가 아직 지원하지 않아 실제 표시는 HD/GS/CJ/LT만 됩니다.
-  </footer>
+  <div id="page-doc" style="display:none;">
+    <div class="panel">
+      <div class="controls" style="justify-content:space-between;">
+        <strong>📦 상품 라이브러리</strong>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="secondary" id="libExportBtn" type="button">내보내기(JSON)</button>
+          <button class="secondary" id="libImportBtn" type="button">가져오기(JSON)</button>
+          <input type="file" id="libImportFile" accept="application/json" style="display:none;">
+          <button class="primary" id="libAddBtn" type="button">+ 새 상품</button>
+        </div>
+      </div>
+      <p class="hint">
+        상품별 소구포인트·스펙·판매가를 한 번 저장해두면 다음 회의자료 만들 때 상품만 선택해도 자동으로 채워져요.
+        이 정보는 <b>이 브라우저에만</b> 저장되니, 다른 컴퓨터(멘토님 컴퓨터 등)와 같이 쓰려면 "내보내기"한 파일을 전달해서 그쪽에서 "가져오기" 해주세요.
+      </p>
+      <div id="libList" class="lib-list"></div>
+      <div id="libFormWrap"></div>
+    </div>
+
+    <div class="panel">
+      <h3>📝 새 회의자료 만들기</h3>
+
+      <div class="section-title">1. 방송운영정보</div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="docChannel">채널</label>
+          <select id="docChannel">
+            <option value="HD">HD(현대)</option>
+            <option value="GS">GS샵</option>
+            <option value="CJ">CJ온스타일</option>
+            <option value="LT">롯데홈쇼핑</option>
+            <option value="KT">KT알파쇼핑</option>
+            <option value="홈앤">홈앤쇼핑</option>
+            <option value="NS">NS홈쇼핑</option>
+            <option value="SK">SK스토아</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="docKind">라이브/데이터</label>
+          <select id="docKind">
+            <option value="live">라이브</option>
+            <option value="data">데이터</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="docSaleRound">세일 회차</label>
+          <input type="number" id="docSaleRound" placeholder="예: 3" min="1">
+        </div>
+        <div class="field">
+          <label for="docDate">방송일</label>
+          <input type="date" id="docDate">
+        </div>
+        <div class="field">
+          <label for="docTime">방송 시작시간</label>
+          <input type="time" id="docTime">
+        </div>
+        <div class="field">
+          <label for="docStudio">스튜디오</label>
+          <input type="text" id="docStudio" placeholder="예: 1스튜디오">
+        </div>
+        <div class="field">
+          <label for="docPd">PD</label>
+          <input type="text" id="docPd">
+        </div>
+        <div class="field">
+          <label for="docSh">SH</label>
+          <input type="text" id="docSh">
+        </div>
+        <div class="field">
+          <label for="docGuest">게스트</label>
+          <input type="text" id="docGuest">
+        </div>
+        <div class="field">
+          <label for="docGift">사은품</label>
+          <input type="text" id="docGift">
+        </div>
+        <div class="field">
+          <label for="docPrize">경품</label>
+          <input type="text" id="docPrize">
+        </div>
+        <div class="field">
+          <label for="docPromo">프로모션 배너 문구 (선택)</label>
+          <input type="text" id="docPromo" placeholder="예: 가전 SUPER WEEK">
+        </div>
+      </div>
+
+      <div class="section-title">2. 목표계산</div>
+      <p class="hint" style="margin-top:-6px;">공목표 = 순목표 × 0.3444 · 목표콜 = 순목표 ÷ 전환율 × 1.1 ÷ 혜택가 — 셋 다 자동 계산돼요.</p>
+      <div class="form-grid">
+        <div class="field">
+          <label for="docNetTarget">순목표 (원)</label>
+          <input type="number" id="docNetTarget" placeholder="예: 100000000">
+        </div>
+        <div class="field">
+          <label for="docConversion">전환율 (%)</label>
+          <input type="number" id="docConversion" step="0.1" placeholder="예: 12">
+        </div>
+        <div class="field">
+          <label for="docCalcBenefit">혜택가 (원, 목표콜 계산용)</label>
+          <input type="number" id="docCalcBenefit" placeholder="예: 500000">
+        </div>
+        <div class="field">
+          <label>공목표 (자동계산)</label>
+          <div class="readout" id="docGrossTargetOut">—</div>
+        </div>
+        <div class="field">
+          <label>목표콜 (자동계산)</label>
+          <div class="readout" id="docTargetCallsOut">—</div>
+        </div>
+      </div>
+
+      <div class="section-title">3. 방송조건</div>
+      <div id="productRows"></div>
+      <button class="secondary" id="addProductRowBtn" type="button">+ 상품 추가</button>
+
+      <div class="section-title">4. 참고방송</div>
+      <div class="form-grid">
+        <div class="field span2">
+          <label for="docRefKeyword">검색어 (브랜드/모델명)</label>
+          <input type="text" id="docRefKeyword" placeholder="예: F25 ACE">
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="primary" id="docRefLookupBtn" type="button">같은 채널에서 자동조회</button>
+        </div>
+        <div class="field">
+          <label for="docRefDate">참고방송 날짜</label>
+          <input type="date" id="docRefDate">
+        </div>
+        <div class="field">
+          <label for="docRefTime">참고방송 시작시간</label>
+          <input type="time" id="docRefTime">
+        </div>
+        <div class="field span3">
+          <label for="docRefNote">참고방송 메모 (콜수/매출 등 — 자동조회 대상이 아니라 직접 입력)</label>
+          <input type="text" id="docRefNote" placeholder="예: 목표콜 대비 92% 달성">
+        </div>
+      </div>
+      <div class="ref-status" id="docRefStatus"></div>
+
+      <div class="section-title">5. 소구포인트</div>
+      <div class="form-grid">
+        <div class="field span3">
+          <label for="docSpec">상품스펙 (본체/도크 등)</label>
+          <textarea id="docSpec" placeholder="상품 라이브러리에서 상품을 고르면 자동으로 채워져요. 직접 수정도 가능해요."></textarea>
+        </div>
+        <div class="field span3">
+          <label for="docSellingPoints">소구포인트</label>
+          <textarea id="docSellingPoints" placeholder="브랜드 소구 문구, 강조할 포인트 등"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="docPreviewPanel">
+      <div class="controls" style="justify-content:space-between; margin-bottom:12px;">
+        <strong>미리보기</strong>
+        <div style="display:flex; gap:8px;">
+          <button class="secondary" id="docCopyBtn" type="button">복사하기</button>
+          <button class="secondary" id="docXlsxBtn" type="button">엑셀 다운로드</button>
+        </div>
+      </div>
+      <div class="doc-preview" id="docPreviewArea"></div>
+    </div>
+
+    <footer>
+      회의자료 생성기는 브라우저 안에서만 동작해요 (별도 서버 없음). 참고방송 자동조회는 HD/GS/CJ/LT만 지원돼요(hdmzp 데이터 기준).<br>
+      상품 라이브러리·입력값은 이 브라우저의 저장공간(localStorage)에만 저장되며, 다른 기기와 공유하려면 내보내기/가져오기를 이용해주세요.
+    </footer>
+  </div>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
 // ===== robot_vacuum_monitor.py 판별/집계 로직 (JS 포팅본) =====
@@ -482,6 +799,36 @@ function buildCalendarGrid(yearMonth) {
   const weeks = [];
   for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
   return weeks;
+}
+
+// ===== 회의자료 생성기: 목표계산 / 참고방송 조회 로직 (logic.js와 동일) =====
+function calcGrossTarget(netTarget) {
+  if (netTarget === null || netTarget === undefined || netTarget === "" || isNaN(netTarget)) return null;
+  return Number(netTarget) * 0.3444;
+}
+
+function calcTargetCalls(netTarget, conversionRatePercent, benefitPrice) {
+  const n = Number(netTarget);
+  const c = Number(conversionRatePercent);
+  const b = Number(benefitPrice);
+  if (!n || !c || !b) return null;
+  const rate = c / 100;
+  return (n / rate) * 1.1 / b;
+}
+
+function findMostRecentBroadcast(entries, { channel, keyword, beforeDate }) {
+  if (!entries || !entries.length || !keyword) return null;
+  const kw = keyword.trim();
+  if (!kw) return null;
+  const matches = entries.filter((e) => {
+    if (channel && e.company !== channel) return false;
+    if (beforeDate && !(e.date < beforeDate)) return false;
+    const hay = `${e.brand} ${e.model}`;
+    return hay.includes(kw);
+  });
+  if (!matches.length) return null;
+  matches.sort((a, b) => (b.date + b.start).localeCompare(a.date + a.start));
+  return matches[0];
 }
 
 async function fetchJson(url) {
@@ -803,6 +1150,531 @@ document.getElementById("copyBtn").addEventListener("click", () => {
 renderLegend();
 populateMonthSelect();
 loadMonth();
+
+// ===================== 회의자료 생성기 (page-doc) =====================
+const LIB_KEY = "meetingDocProductLibrary_v1";
+
+function loadLibrary() {
+  try {
+    const raw = localStorage.getItem(LIB_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+function saveLibrary(items) {
+  try { localStorage.setItem(LIB_KEY, JSON.stringify(items)); } catch (e) {}
+}
+function genId() {
+  return "p_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+let productLibrary = loadLibrary();
+const productRows = []; // { rowEl, librarySelect, nameInput, priceInput, saleLabelInput, benefitInput, interestInput }
+
+function field(grid, labelText, inputEl, span) {
+  const f = el("div", "field" + (span ? " " + span : ""));
+  f.appendChild(el("label", null, labelText));
+  f.appendChild(inputEl);
+  grid.appendChild(f);
+  return inputEl;
+}
+
+function renderLibList() {
+  const wrap = document.getElementById("libList");
+  wrap.innerHTML = "";
+  if (!productLibrary.length) {
+    wrap.appendChild(el("div", "lib-empty", "아직 저장된 상품이 없어요. '+ 새 상품'을 눌러 추가해보세요."));
+    return;
+  }
+  for (const p of productLibrary) {
+    const item = el("div", "lib-item");
+    const left = el("div");
+    left.appendChild(el("div", "lib-item-name", p.name));
+    const subText = p.brand
+      ? `${p.brand}${p.salePrice ? " · 판매가 " + Number(p.salePrice).toLocaleString() + "원" : ""}`
+      : "";
+    left.appendChild(el("div", "lib-item-sub", subText));
+    item.appendChild(left);
+    const actions = el("div", "lib-item-actions");
+    const editBtn = el("button", "secondary", "수정");
+    editBtn.type = "button";
+    editBtn.addEventListener("click", () => openLibForm(p.id));
+    const delBtn = el("button", "secondary", "삭제");
+    delBtn.type = "button";
+    delBtn.addEventListener("click", () => {
+      if (!confirm(`"${p.name}" 항목을 삭제할까요?`)) return;
+      productLibrary = productLibrary.filter((x) => x.id !== p.id);
+      saveLibrary(productLibrary);
+      renderLibList();
+      refreshProductSelects();
+    });
+    actions.appendChild(editBtn);
+    actions.appendChild(delBtn);
+    item.appendChild(actions);
+    wrap.appendChild(item);
+  }
+}
+
+function openLibForm(id) {
+  const existing = id ? productLibrary.find((p) => p.id === id) : null;
+  const wrap = document.getElementById("libFormWrap");
+  wrap.innerHTML = "";
+  const form = el("div", "lib-form");
+  form.appendChild(el("h3", null, existing ? "상품 수정" : "새 상품 추가"));
+  const grid = el("div", "form-grid");
+
+  const nameInput = document.createElement("input"); nameInput.type = "text";
+  nameInput.value = existing ? existing.name : "";
+  field(grid, "상품명 (예: 로보락 F25 ACE)", nameInput, "span2");
+
+  const brandInput = document.createElement("input"); brandInput.type = "text";
+  brandInput.value = existing ? existing.brand || "" : "";
+  field(grid, "브랜드", brandInput);
+
+  const priceInput = document.createElement("input"); priceInput.type = "number";
+  priceInput.value = existing && existing.salePrice ? existing.salePrice : "";
+  field(grid, "기본 판매가 (원)", priceInput);
+
+  const benefitInput = document.createElement("input"); benefitInput.type = "number";
+  benefitInput.value = existing && existing.benefitPrice ? existing.benefitPrice : "";
+  field(grid, "기본 혜택가 (원)", benefitInput);
+
+  const specInput = document.createElement("textarea");
+  specInput.value = existing ? existing.spec || "" : "";
+  field(grid, "상품스펙 (본체/도크 등)", specInput, "span3");
+
+  const sellingInput = document.createElement("textarea");
+  sellingInput.value = existing ? existing.sellingPoints || "" : "";
+  field(grid, "소구포인트", sellingInput, "span3");
+
+  form.appendChild(grid);
+  const btnRow = el("div", "controls");
+  btnRow.style.marginTop = "12px";
+  const saveBtn = el("button", "primary", "저장");
+  saveBtn.type = "button";
+  saveBtn.addEventListener("click", () => {
+    const name = nameInput.value.trim();
+    if (!name) { alert("상품명을 입력해주세요."); return; }
+    const payload = {
+      id: existing ? existing.id : genId(),
+      name,
+      brand: brandInput.value.trim(),
+      salePrice: priceInput.value ? Number(priceInput.value) : null,
+      benefitPrice: benefitInput.value ? Number(benefitInput.value) : null,
+      spec: specInput.value,
+      sellingPoints: sellingInput.value,
+    };
+    if (existing) {
+      productLibrary = productLibrary.map((p) => (p.id === existing.id ? payload : p));
+    } else {
+      productLibrary.push(payload);
+    }
+    saveLibrary(productLibrary);
+    wrap.innerHTML = "";
+    renderLibList();
+    refreshProductSelects();
+  });
+  const cancelBtn = el("button", "secondary", "취소");
+  cancelBtn.type = "button";
+  cancelBtn.addEventListener("click", () => { wrap.innerHTML = ""; });
+  btnRow.appendChild(saveBtn);
+  btnRow.appendChild(cancelBtn);
+  form.appendChild(btnRow);
+  wrap.appendChild(form);
+}
+
+document.getElementById("libAddBtn").addEventListener("click", () => openLibForm(null));
+
+document.getElementById("libExportBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(productLibrary, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "상품라이브러리.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+document.getElementById("libImportBtn").addEventListener("click", () => {
+  document.getElementById("libImportFile").click();
+});
+document.getElementById("libImportFile").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const imported = JSON.parse(reader.result);
+      if (!Array.isArray(imported)) throw new Error("형식 오류");
+      const byName = new Map(productLibrary.map((p) => [p.name, p]));
+      for (const p of imported) {
+        if (!p.id) p.id = genId();
+        byName.set(p.name, p);
+      }
+      productLibrary = [...byName.values()];
+      saveLibrary(productLibrary);
+      renderLibList();
+      refreshProductSelects();
+      alert(`${imported.length}개 상품을 가져왔어요.`);
+    } catch (err) {
+      alert("파일을 읽는 중 문제가 발생했어요. 올바른 JSON 파일인지 확인해주세요.");
+    }
+    e.target.value = "";
+  };
+  reader.readAsText(file);
+});
+
+function productSelectOptions(selectEl, selectedValue) {
+  const prev = selectedValue !== undefined ? selectedValue : selectEl.value;
+  selectEl.innerHTML = "";
+  const optNone = document.createElement("option");
+  optNone.value = "";
+  optNone.textContent = "직접 입력";
+  selectEl.appendChild(optNone);
+  for (const p of productLibrary) {
+    const opt = document.createElement("option");
+    opt.value = p.id;
+    opt.textContent = p.name;
+    selectEl.appendChild(opt);
+  }
+  selectEl.value = prev || "";
+}
+
+function refreshProductSelects() {
+  for (const row of productRows) productSelectOptions(row.librarySelect);
+}
+
+function addProductRow() {
+  const wrap = document.getElementById("productRows");
+  const rowEl = el("div", "product-row");
+  const removeBtn = el("button", "product-row-remove", "✕ 삭제");
+  removeBtn.type = "button";
+  const grid = el("div", "form-grid");
+
+  const librarySelect = document.createElement("select");
+  field(grid, "라이브러리에서 선택", librarySelect, "span2");
+  productSelectOptions(librarySelect);
+
+  const nameInput = document.createElement("input"); nameInput.type = "text"; nameInput.placeholder = "상품명";
+  field(grid, "상품명", nameInput);
+  const priceInput = document.createElement("input"); priceInput.type = "number"; priceInput.placeholder = "예: 1290000";
+  field(grid, "판매가 (원)", priceInput);
+  const saleLabelInput = document.createElement("input"); saleLabelInput.type = "text"; saleLabelInput.placeholder = "예: 3회차 세일 / 환원";
+  field(grid, "세일 구분", saleLabelInput);
+  const benefitInput = document.createElement("input"); benefitInput.type = "number"; benefitInput.placeholder = "예: 990000";
+  field(grid, "혜택가 (원)", benefitInput);
+  const interestInput = document.createElement("input"); interestInput.type = "text"; interestInput.placeholder = "예: 6개월 무이자";
+  field(grid, "무이자", interestInput);
+
+  rowEl.appendChild(removeBtn);
+  rowEl.appendChild(grid);
+  wrap.appendChild(rowEl);
+
+  const rowState = { rowEl, librarySelect, nameInput, priceInput, saleLabelInput, benefitInput, interestInput };
+
+  librarySelect.addEventListener("change", () => {
+    const p = productLibrary.find((x) => x.id === librarySelect.value);
+    if (p) {
+      nameInput.value = p.name;
+      if (p.salePrice) priceInput.value = p.salePrice;
+      if (p.benefitPrice) benefitInput.value = p.benefitPrice;
+      if (productRows[0] === rowState) {
+        document.getElementById("docSpec").value = p.spec || "";
+        document.getElementById("docSellingPoints").value = p.sellingPoints || "";
+        document.getElementById("docRefKeyword").value = p.name;
+        const calcBenefitEl = document.getElementById("docCalcBenefit");
+        if (!calcBenefitEl.value && p.benefitPrice) {
+          calcBenefitEl.value = p.benefitPrice;
+          updateTargetCalc();
+        }
+      }
+    }
+    updatePreview();
+  });
+  [nameInput, priceInput, saleLabelInput, benefitInput, interestInput].forEach((inp) =>
+    inp.addEventListener("input", updatePreview)
+  );
+
+  removeBtn.addEventListener("click", () => {
+    const idx = productRows.indexOf(rowState);
+    if (idx >= 0) productRows.splice(idx, 1);
+    rowEl.remove();
+    updatePreview();
+  });
+
+  productRows.push(rowState);
+  updatePreview();
+}
+document.getElementById("addProductRowBtn").addEventListener("click", () => addProductRow());
+
+function updateTargetCalc() {
+  const net = document.getElementById("docNetTarget").value;
+  const conv = document.getElementById("docConversion").value;
+  const benefit = document.getElementById("docCalcBenefit").value;
+  const gross = calcGrossTarget(net);
+  const calls = calcTargetCalls(net, conv, benefit);
+  document.getElementById("docGrossTargetOut").textContent = gross !== null ? `${Math.round(gross).toLocaleString()}원` : "—";
+  document.getElementById("docTargetCallsOut").textContent = calls !== null ? `${Math.round(calls).toLocaleString()}콜` : "—";
+  updatePreview();
+}
+["docNetTarget", "docConversion", "docCalcBenefit"].forEach((id) =>
+  document.getElementById(id).addEventListener("input", updateTargetCalc)
+);
+
+async function lookupReference() {
+  const channel = document.getElementById("docChannel").value;
+  const keyword = document.getElementById("docRefKeyword").value.trim();
+  const beforeDate = document.getElementById("docDate").value;
+  const statusEl = document.getElementById("docRefStatus");
+
+  if (!COMPANIES.includes(channel)) {
+    statusEl.className = "ref-status error";
+    statusEl.textContent = "자동조회는 HD/GS/CJ/LT 채널만 지원돼요. 이 채널은 직접 입력해주세요.";
+    return;
+  }
+  if (!keyword) {
+    statusEl.className = "ref-status error";
+    statusEl.textContent = "검색어(브랜드/모델명)를 입력해주세요.";
+    return;
+  }
+  if (!beforeDate) {
+    statusEl.className = "ref-status error";
+    statusEl.textContent = "먼저 방송일을 입력해주세요.";
+    return;
+  }
+
+  statusEl.className = "ref-status";
+  statusEl.textContent = "조회 중...";
+  const btn = document.getElementById("docRefLookupBtn");
+  btn.disabled = true;
+  try {
+    const [by, bm] = beforeDate.split("-").map(Number);
+    let found = null;
+    for (let back = 0; back < 6 && !found; back++) {
+      const d = new Date(Date.UTC(by, bm - 1 - back, 1));
+      const ym = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+      const monthEntries = await collectMonth(ym);
+      found = findMostRecentBroadcast(monthEntries, { channel, keyword, beforeDate });
+    }
+    if (found) {
+      document.getElementById("docRefDate").value = found.date;
+      document.getElementById("docRefTime").value = found.start;
+      statusEl.className = "ref-status ok";
+      statusEl.textContent = `찾았어요: ${found.date}(${found.weekday}) ${found.company}(${KIND_LABEL[found.kind]}) ${found.model} ${found.start}`;
+    } else {
+      statusEl.className = "ref-status error";
+      statusEl.textContent = "최근 6개월 안에서 같은 채널·같은 검색어의 방송을 찾지 못했어요. 직접 입력해주세요.";
+    }
+    updatePreview();
+  } catch (e) {
+    statusEl.className = "ref-status error";
+    statusEl.textContent = "조회 중 오류가 발생했어요. 인터넷 연결을 확인해주세요.";
+  } finally {
+    btn.disabled = false;
+  }
+}
+document.getElementById("docRefLookupBtn").addEventListener("click", lookupReference);
+
+function currentDocState() {
+  return {
+    channel: document.getElementById("docChannel").value,
+    kind: document.getElementById("docKind").value,
+    saleRound: document.getElementById("docSaleRound").value,
+    date: document.getElementById("docDate").value,
+    time: document.getElementById("docTime").value,
+    studio: document.getElementById("docStudio").value,
+    pd: document.getElementById("docPd").value,
+    sh: document.getElementById("docSh").value,
+    guest: document.getElementById("docGuest").value,
+    gift: document.getElementById("docGift").value,
+    prize: document.getElementById("docPrize").value,
+    promo: document.getElementById("docPromo").value,
+    netTarget: document.getElementById("docNetTarget").value,
+    conversion: document.getElementById("docConversion").value,
+    calcBenefit: document.getElementById("docCalcBenefit").value,
+    refDate: document.getElementById("docRefDate").value,
+    refTime: document.getElementById("docRefTime").value,
+    refNote: document.getElementById("docRefNote").value,
+    spec: document.getElementById("docSpec").value,
+    sellingPoints: document.getElementById("docSellingPoints").value,
+  };
+}
+
+function docTitle(s) {
+  const kindLabel = s.kind === "live" ? "라이브" : "데이터";
+  const weekday = s.date ? weekdayKo(s.date) : "";
+  const productName = productRows[0] ? productRows[0].nameInput.value : "";
+  const roundText = s.saleRound ? ` : 세일 ${s.saleRound}회차` : "";
+  return `[${kindLabel}] ${s.date || "____"}${weekday ? "(" + weekday + ")" : ""} ${productName}${roundText}`;
+}
+
+function indentBlock(text) {
+  return text.split("\n").map((l) => "   " + l).join("\n");
+}
+
+function buildDocLines() {
+  const s = currentDocState();
+  const gross = calcGrossTarget(s.netTarget);
+  const calls = calcTargetCalls(s.netTarget, s.conversion, s.calcBenefit);
+  const lines = [];
+  lines.push(docTitle(s));
+  if (s.promo) lines.push(`[프로모션] ${s.promo}`);
+  lines.push("");
+  lines.push("1. 방송운영정보");
+  lines.push(`   일시: ${s.date || "-"} ${s.time || ""} (${s.channel} · ${s.kind === "live" ? "라이브" : "데이터"})`.trim());
+  lines.push(`   PD/SH/게스트: ${s.pd || "-"} / ${s.sh || "-"} / ${s.guest || "-"}`);
+  lines.push(`   스튜디오: ${s.studio || "-"}`);
+  lines.push(`   목표콜수: ${calls !== null ? Math.round(calls).toLocaleString() + "콜" : "-"}`);
+  lines.push(`   사은품: ${s.gift || "-"}`);
+  lines.push(`   경품: ${s.prize || "-"}`);
+  lines.push("");
+  lines.push("2. 목표계산");
+  lines.push(`   순목표: ${s.netTarget ? Number(s.netTarget).toLocaleString() + "원" : "-"}`);
+  lines.push(`   공목표: ${gross !== null ? Math.round(gross).toLocaleString() + "원" : "-"}`);
+  lines.push(`   전환율: ${s.conversion ? s.conversion + "%" : "-"}`);
+  lines.push(`   혜택가: ${s.calcBenefit ? Number(s.calcBenefit).toLocaleString() + "원" : "-"}`);
+  lines.push(`   목표콜: ${calls !== null ? Math.round(calls).toLocaleString() + "콜" : "-"}`);
+  lines.push("");
+  lines.push("3. 방송조건");
+  if (!productRows.length) {
+    lines.push("   (등록된 상품 없음)");
+  } else {
+    for (const r of productRows) {
+      const name = r.nameInput.value || "-";
+      const price = r.priceInput.value ? Number(r.priceInput.value).toLocaleString() + "원" : "-";
+      const saleLabel = r.saleLabelInput.value || "-";
+      const benefit = r.benefitInput.value ? Number(r.benefitInput.value).toLocaleString() + "원" : "-";
+      const interest = r.interestInput.value || "-";
+      lines.push(`   ${name} | 판매가 ${price} | ${saleLabel} | 혜택가 ${benefit} | ${interest}`);
+    }
+  }
+  lines.push("");
+  lines.push("4. 참고방송");
+  if (s.refDate) {
+    lines.push(`   ${s.refDate}${s.refTime ? " " + s.refTime : ""} (${s.channel})${s.refNote ? " — " + s.refNote : ""}`);
+  } else {
+    lines.push("   (참고방송 미입력)");
+  }
+  lines.push("");
+  lines.push("5. 소구포인트");
+  lines.push(s.sellingPoints ? indentBlock(s.sellingPoints) : "   -");
+  if (s.spec) {
+    lines.push("");
+    lines.push("   [상품스펙]");
+    lines.push(indentBlock(s.spec));
+  }
+  return lines;
+}
+
+function updatePreview() {
+  document.getElementById("docPreviewArea").textContent = buildDocLines().join("\n");
+}
+
+[
+  "docChannel", "docKind", "docSaleRound", "docDate", "docTime", "docStudio", "docPd", "docSh", "docGuest",
+  "docGift", "docPrize", "docPromo", "docRefDate", "docRefTime", "docRefNote", "docSpec", "docSellingPoints",
+].forEach((id) => {
+  const elx = document.getElementById(id);
+  elx.addEventListener("input", updatePreview);
+  elx.addEventListener("change", updatePreview);
+});
+
+document.getElementById("docCopyBtn").addEventListener("click", () => {
+  const text = document.getElementById("docPreviewArea").textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById("docCopyBtn");
+    const original = btn.textContent;
+    btn.textContent = "복사됨!";
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  }).catch(() => {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+  });
+});
+
+document.getElementById("docXlsxBtn").addEventListener("click", () => {
+  const s = currentDocState();
+  const gross = calcGrossTarget(s.netTarget);
+  const calls = calcTargetCalls(s.netTarget, s.conversion, s.calcBenefit);
+  const rows = [];
+  rows.push([docTitle(s)]);
+  if (s.promo) rows.push([`[프로모션] ${s.promo}`]);
+  rows.push([]);
+  rows.push(["1. 방송운영정보"]);
+  rows.push(["일시", `${s.date || "-"} ${s.time || ""}`.trim()]);
+  rows.push(["채널", `${s.channel} (${s.kind === "live" ? "라이브" : "데이터"})`]);
+  rows.push(["PD", s.pd || "-"]);
+  rows.push(["SH", s.sh || "-"]);
+  rows.push(["게스트", s.guest || "-"]);
+  rows.push(["스튜디오", s.studio || "-"]);
+  rows.push(["목표콜수", calls !== null ? Math.round(calls) : "-"]);
+  rows.push(["사은품", s.gift || "-"]);
+  rows.push(["경품", s.prize || "-"]);
+  rows.push([]);
+  rows.push(["2. 목표계산"]);
+  rows.push(["순목표", s.netTarget ? Number(s.netTarget) : "-"]);
+  rows.push(["공목표", gross !== null ? Math.round(gross) : "-"]);
+  rows.push(["전환율(%)", s.conversion || "-"]);
+  rows.push(["혜택가", s.calcBenefit ? Number(s.calcBenefit) : "-"]);
+  rows.push(["목표콜", calls !== null ? Math.round(calls) : "-"]);
+  rows.push([]);
+  rows.push(["3. 방송조건"]);
+  rows.push(["상품명", "판매가", "세일구분", "혜택가", "무이자"]);
+  for (const r of productRows) {
+    rows.push([
+      r.nameInput.value || "-",
+      r.priceInput.value ? Number(r.priceInput.value) : "-",
+      r.saleLabelInput.value || "-",
+      r.benefitInput.value ? Number(r.benefitInput.value) : "-",
+      r.interestInput.value || "-",
+    ]);
+  }
+  rows.push([]);
+  rows.push(["4. 참고방송"]);
+  rows.push(["날짜", s.refDate || "-"]);
+  rows.push(["시간", s.refTime || "-"]);
+  rows.push(["메모", s.refNote || "-"]);
+  rows.push([]);
+  rows.push(["5. 소구포인트"]);
+  rows.push([s.sellingPoints || "-"]);
+  if (s.spec) {
+    rows.push([]);
+    rows.push(["상품스펙"]);
+    rows.push([s.spec]);
+  }
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws["!cols"] = [{ wch: 14 }, { wch: 28 }, { wch: 16 }, { wch: 16 }, { wch: 16 }];
+  XLSX.utils.book_append_sheet(wb, ws, "회의자료");
+  const fname = `${s.date || "회의자료"}_${productRows[0] ? productRows[0].nameInput.value : "상품미지정"}.xlsx`;
+  XLSX.writeFile(wb, fname);
+});
+
+document.getElementById("pageTabSchedule").addEventListener("click", () => {
+  document.getElementById("pageTabSchedule").classList.add("active");
+  document.getElementById("pageTabDoc").classList.remove("active");
+  document.getElementById("page-schedule").style.display = "block";
+  document.getElementById("page-doc").style.display = "none";
+});
+document.getElementById("pageTabDoc").addEventListener("click", () => {
+  document.getElementById("pageTabDoc").classList.add("active");
+  document.getElementById("pageTabSchedule").classList.remove("active");
+  document.getElementById("page-schedule").style.display = "none";
+  document.getElementById("page-doc").style.display = "block";
+});
+
+renderLibList();
+addProductRow();
+updateTargetCalc();
+updatePreview();
 </script>
 </body>
 </html>
