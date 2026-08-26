@@ -1524,7 +1524,7 @@ function buildDocLines() {
   if (s.promo) lines.push(`[프로모션] ${s.promo}`);
   lines.push("");
   lines.push("1. 방송운영정보");
-  lines.push(`   일시: ${s.date || "-"} ${s.time || ""} (${s.channel} · ${s.kind === "live" ? "라이브" : "데이터"})`.trim());
+  lines.push(`   일시: ${s.date || "-"}${s.time ? " " + s.time : ""} (${s.channel} · ${s.kind === "live" ? "라이브" : "데이터"})`);
   lines.push(`   PD/SH/게스트: ${s.pd || "-"} / ${s.sh || "-"} / ${s.guest || "-"}`);
   lines.push(`   스튜디오: ${s.studio || "-"}`);
   lines.push(`   목표콜수: ${calls !== null ? Math.round(calls).toLocaleString() + "콜" : "-"}`);
