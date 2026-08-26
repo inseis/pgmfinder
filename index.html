@@ -233,7 +233,7 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    min-height: 96px;
+    min-height: 120px;
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 6px;
@@ -254,17 +254,27 @@
     flex-direction: column;
     gap: 3px;
     overflow-y: auto;
-    max-height: 68px;
+    max-height: 92px;
   }
   .chip {
     font-size: 0.68rem;
     font-weight: 600;
-    padding: 2px 5px;
+    padding: 3px 5px;
     border-radius: 5px;
+    line-height: 1.3;
+    cursor: default;
+  }
+  .chip-time,
+  .chip-model {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    cursor: default;
+  }
+  .chip-model {
+    font-size: 0.62rem;
+    font-weight: 500;
+    opacity: 0.92;
+    margin-top: 1px;
   }
 
   .copy-block { margin-top: 20px; }
@@ -654,9 +664,11 @@ function makeChip(row) {
   const kindLabel = KIND_LABEL[row.kind] || row.kind;
   const extra = row.models.length - 1;
   const modelText = row.models[0] + (extra > 0 ? ` 외 ${extra}건` : "");
-  const chip = el("div", "chip", `${row.company}(${kindLabel}) ${row.start}`);
+  const chip = el("div", "chip");
   chip.style.background = colors.bg;
   chip.style.color = colors.text;
+  chip.appendChild(el("div", "chip-time", `${row.company}(${kindLabel}) ${row.start}`));
+  chip.appendChild(el("div", "chip-model", modelText));
   chip.title = `${row.company}(${kindLabel}) ${row.start} — ${modelText}`;
   return chip;
 }
